@@ -256,6 +256,17 @@
           list = data.terms;
         } else if (Array.isArray(data?.related)) {
           list = data.related;
+        } else if (data && typeof data === 'object') {
+          // 如果資料是物件，嘗試找出所有可能的陣列
+          const possibleArrays = Object.values(data).filter(v => Array.isArray(v));
+          if (possibleArrays.length > 0) {
+            list = possibleArrays[0];
+          }
+        }
+        // 如果還是沒有資料，顯示原始 JSON 以便除錯
+        if (list.length === 0 && data) {
+          termResults.innerHTML = '<details class="text-xs"><summary class="cursor-pointer text-gray-600 hover:text-gray-900">顯示原始回應 (用於除錯)</summary><pre class="bg-gray-50 rounded-lg p-3 mt-2 overflow-x-auto">'+JSON.stringify(data, null, 2)+'</pre></details>';
+          return;
         }
         renderPills(termResults, list, (text) => {
           if (queryInput.value && !queryInput.value.endsWith(' ')) queryInput.value += ' ';
@@ -289,14 +300,28 @@
           '</pre>';
           return;
         }
+        let resultsArray = null;
         if (Array.isArray(data)) {
-          renderTable(queryResults, data);
+          resultsArray = data;
         } else if (Array.isArray(data?.studies)) {
-          renderTable(queryResults, data.studies);
+          resultsArray = data.studies;
         } else if (Array.isArray(data?.results)) {
-          renderTable(queryResults, data.results);
+          resultsArray = data.results;
+        } else if (data && typeof data === 'object') {
+          // 嘗試找出所有可能的陣列
+          const possibleArrays = Object.entries(data).filter(([k, v]) => Array.isArray(v) && v.length > 0);
+          if (possibleArrays.length > 0) {
+            resultsArray = possibleArrays[0][1];
+          }
+        }
+        
+        if (resultsArray && resultsArray.length > 0) {
+          renderTable(queryResults, resultsArray);
+          // 顯示筆數資訊
+          const countInfo = data?.count ? ` (共 ${data.count} 筆)` : ` (${resultsArray.length} 筆)`;
+          queryStatus.innerHTML += `<span class="text-gray-600"> · 顯示${countInfo}</span>`;
         } else if (isJson) {
-          queryResults.innerHTML = '<pre class="bg-gray-50 rounded-lg p-3 text-xs overflow-x-auto">'+JSON.stringify(data, null, 2)+'</pre>';
+          queryResults.innerHTML = '<div class="text-gray-500 text-sm mb-2">無法解析為表格，顯示原始資料：</div><pre class="bg-gray-50 rounded-lg p-3 text-xs overflow-x-auto">'+JSON.stringify(data, null, 2)+'</pre>';
         } else {
           queryResults.innerHTML = '<pre class="bg-gray-50 rounded-lg p-3 text-xs overflow-x-auto">'+String(data)+'</pre>';
         }
