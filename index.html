@@ -249,7 +249,14 @@
           '</pre>';
           return;
         }
-        const list = Array.isArray(data) ? data : (Array.isArray(data?.terms) ? data.terms : []);
+        let list = [];
+        if (Array.isArray(data)) {
+          list = data;
+        } else if (Array.isArray(data?.terms)) {
+          list = data.terms;
+        } else if (Array.isArray(data?.related)) {
+          list = data.related;
+        }
         renderPills(termResults, list, (text) => {
           if (queryInput.value && !queryInput.value.endsWith(' ')) queryInput.value += ' ';
           queryInput.value += text;
@@ -286,6 +293,8 @@
           renderTable(queryResults, data);
         } else if (Array.isArray(data?.studies)) {
           renderTable(queryResults, data.studies);
+        } else if (Array.isArray(data?.results)) {
+          renderTable(queryResults, data.results);
         } else if (isJson) {
           queryResults.innerHTML = '<pre class="bg-gray-50 rounded-lg p-3 text-xs overflow-x-auto">'+JSON.stringify(data, null, 2)+'</pre>';
         } else {
